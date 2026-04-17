@@ -1,0 +1,23 @@
+{
+  "name": "haazel",
+  "owner": {
+    "name": "Micheaux Spencer",
+    "email": "micheauxspencer@gmail.com"
+  },
+  "metadata": {
+    "description": "Haazel cinematic website builder — 4 skills that turn any domain into a production-grade Next.js site with GSAP scroll effects, scroll-driven video heroes, and optional Sanity CMS auto-blogging.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "haazel",
+      "source": "./plugins/haazel",
+      "description": "End-to-end cinematic website builder. Four skills: /haazel-build (master 8-phase workflow), /haazel-brand-analyzer (forensic DOM extraction), /haazel-cinematic (GSAP module composition), /haazel-auto-blog (Sanity CMS setup).",
+      "version": "0.1.0",
+      "category": "website-builder",
+      "keywords": ["nextjs", "gsap", "cinematic", "sanity", "fal", "website-builder", "scaffold"],
+      "license": "MIT",
+      "repository": "https://github.com/micheauxspencer/haazel-plugin"
+    }
+  ]
+}
