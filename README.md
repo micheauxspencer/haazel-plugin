@@ -15,19 +15,35 @@ Four skills that work together or independently:
 
 ## Install
 
+This is a **marketplace** repo. Add the marketplace first, then install the plugin:
+
 ```bash
-claude plugin add https://github.com/micheauxspencer/haazel-plugin
+# From Claude Code (interactive)
+/plugin marketplace add micheauxspencer/haazel-plugin
+/plugin install haazel@haazel
 ```
 
-Or for local development:
+Or from the shell:
 ```bash
-claude plugin add ./haazel-plugin
+claude plugin marketplace add micheauxspencer/haazel-plugin
+claude plugin install haazel@haazel
 ```
 
-After install, restart your Claude Code session and verify:
+For local development:
+```bash
+claude plugin marketplace add ./haazel-plugin
+claude plugin install haazel@haazel
 ```
-/haazel-build
+
+After install, restart your Claude Code session and verify the commands exist:
 ```
+/haazel:haazel-build
+/haazel:haazel-brand-analyzer
+/haazel:haazel-cinematic
+/haazel:haazel-auto-blog
+```
+
+(Note: plugins namespace their commands with the plugin name. The marketplace namespace also comes into play when there are name conflicts.)
 
 ## Prerequisites
 
