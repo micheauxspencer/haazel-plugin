@@ -1,0 +1,19 @@
+{
+  "name": "haazel",
+  "version": "0.1.0",
+  "description": "End-to-end cinematic website builder plugin. Domain analysis, brand extraction, GSAP cinematic modules, Sanity CMS auto-blogging. Produces production-grade Next.js sites with scroll-driven video heroes, TextMaskReveal, SpotlightBorderCards, KineticMarquee, CurtainReveal, and more.",
+  "author": {
+    "name": "Haazel",
+    "email": "micheauxspencer@gmail.com"
+  },
+  "keywords": [
+    "nextjs",
+    "gsap",
+    "cinematic",
+    "sanity",
+    "fal",
+    "website-builder",
+    "scaffold"
+  ],
+  "license": "MIT"
+}
