@@ -75,22 +75,57 @@ Recommended:
 
 ## Cinematic Components (in the scaffold)
 
-All 14 components ported from the Cinematic Modules library:
+**34 production-grade GSAP components** ported from the Cinematic Modules library, organized by interaction category. Full documentation with props and usage examples lives in the scaffold at `src/components/cinematic/README.md`.
 
-- **CanvasHero** — Scroll-driven frame sequence (300vh sticky canvas with GSAP scrub) or static fallback
-- **TextMaskReveal** — Giant outlined text fills with color on scroll via clipPath
-- **KineticMarquee** — Infinite text strip that accelerates with scroll velocity
-- **SpotlightBorderCards** — Grid with cursor-tracking border glow on each card
-- **OdometerCounter** — Mechanical rolling digit counter triggered on scroll
-- **AccordionSlider** — Expandable image panels (flex 1→5 on hover)
-- **ColorShiftSection** — Background/text color transitions when section enters viewport
-- **StickyStack** — Pinned visual + scrolling content cards
-- **CurtainReveal** — Two panels part like curtains revealing content behind
-- **HorizontalScroll** — Vertical scroll hijacked into horizontal pan
-- **GradientStrokeText** — Animated gradient on outlined text
-- **CursorGlow** — Page-wide cursor-following radial gradient
-- **NoiseOverlay** — Subtle SVG film grain overlay
-- **TiltCard** — 3D perspective tilt with cursor-tracking spotlight
+### Scroll-Driven (10)
+- **CanvasHero** — Scroll-driven JPEG frame sequence on canvas (300vh sticky + GSAP scrub) with static fallback
+- **TextMaskReveal** — Giant outlined text fills with color on scroll via clipPath animation
+- **CurtainReveal** — Two sticky panels part like curtains revealing content behind (xPercent ±100)
+- **HorizontalScroll** — Vertical scroll hijacked into horizontal pan with progress bar
+- **ColorShiftSection** — Background + text color transitions when section enters viewport (0.8s CSS transition at top 60%)
+- **StickyStack** — Pinned visual on left + scrolling content cards on right (visual swaps as cards enter)
+- **StickyCards** — Stacking cards where each pins and the next slides over it
+- **SplitScreen** — Two-column scroll with independent left/right panels
+- **ZoomParallax** — 3 depth layers zoom at different speeds on scroll (bg 1→1.15, mid 1→1.6, fg 1→6)
+- **SVGDraw** — SVG paths draw themselves via stroke-dasharray/dashoffset GSAP animation
+
+### Cursor & Hover (9)
+- **CursorGlow** — Fixed radial gradient follows cursor with 0.12 eased trailing (desktop only)
+- **TiltCard** — 3D perspective tilt (600px, ±12° rotation, 1.02 scale) with cursor-tracking spotlight
+- **SpotlightBorderCards** — Grid with cursor-tracking border glow on each card (CSS vars)
+- **AccordionSlider** — Expandable image panels (flex 1→5) with staggered content reveal (horizontal or vertical)
+- **FlipCards** — 3D flip on hover (rotateY 180deg, backface-hidden)
+- **CursorReveal** — Before/after image comparison (horizontal drag, vertical drag, spotlight, or grid)
+- **ImageTrail** — Cursor leaves rotating fading trail of elements (60px spawn threshold, pool of 20)
+- **MagneticGrid** — Dot grid that reacts to cursor proximity (dots scale up as cursor approaches)
+- **DragPanGrid** — Click-and-drag to pan infinite canvas of scattered cards (mood boards)
+
+### Click & Tap (6)
+- **CoverflowCarousel** — 3D perspective carousel (center scale 1, flanks 0.8 with rotateY ±40°)
+- **ParticleButton** — Button emits canvas particles on click with physics (velocity, gravity, fade)
+- **DynamicIsland** — Apple Dynamic Island-style expanding pill (44px → 320px, 20px radius)
+- **DockNav** — macOS dock with distance-based magnification (48px → 72px within 120px range)
+- **ViewTransitionMorph** — Card-to-detail morphing using View Transitions API
+- **OdometerCounter** — Mechanical rolling digit counter triggered on scroll (0.12s staggered delays)
+
+### Ambient & Auto (9)
+- **KineticMarquee** — Infinite text strip accelerates with scroll velocity (ScrollTrigger.getVelocity())
+- **CircularText** — SVG text rotates along circular path (continuous + scroll-velocity reactive)
+- **GlitchEffect** — RGB channel split on hover with steps() keyframe animation (cyan top, red bottom)
+- **GradientStrokeText** — Outlined text with animated gradient fill (background-size 300%, infinite linear)
+- **MeshGradient** — Animated gradient blobs drift smoothly (ambient atmospheric background)
+- **TextScramble** — Text decodes character-by-character Matrix-style (cycles random chars, resolves left-to-right)
+- **Typewriter** — Sequential text reveal with blinking cursor
+- **VideoBackground** — Fullscreen autoplay looping video with optional overlay and content layer
+- **NoiseOverlay** — Fixed full-page SVG film grain via feTurbulence filter (2-4% opacity)
+
+### Component Conventions
+All components follow these rules (see full README in scaffold for examples):
+- `"use client"` with dynamic GSAP imports (zero impact on initial bundle)
+- `gsap.context()` cleanup in useEffect return
+- Standard easing: `cubic-bezier(.16, 1, .3, 1)` for interactive transitions
+- TypeScript props interface + `className` prop on every component
+- SSR safe (browser APIs only in useEffect)
 
 ## Hard Rules (Enforced Every Build)
 
