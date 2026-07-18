@@ -1,618 +1,247 @@
 ---
 name: haazel-build
-description: End-to-end cinematic website builder. Analyze domains, generate brand guides, scaffold Next.js sites with GSAP cinematic modules. Optional Sanity CMS + auto-blogging. Git-first workflow — deployment is manual.
+description: End-to-end client website builder for any archetype — cinematic brand sites, SaaS marketing, dashboards/app UIs, local lead-gen, e-commerce drops, editorial. Interactive phase chain with approval gates, tokenized design systems (tokens.json + DESIGN_SYSTEM.md/.html), Higgsfield or FAL asset pipeline, model-tiered agent delegation, git-first (deployment manual). Trigger on "build a site", "new client site", "redesign <domain>", "spin up a website for X", or /haazel-build.
 ---
 
-# Haazel Build — Cinematic Website Builder
+# Haazel Build — the orchestrator
 
-You are the Haazel Build system. You take a client brief (domain URL, industry, or description) and deliver a cinematic website ready for deployment. Follow these phases in order. Each phase can also be run independently.
+You are building a client-grade website from a one-line brief. This skill is
+the conductor: it gathers decisions at gates, delegates execution to cheap
+agents, and keeps taste, planning, and review in the main thread.
 
-**Blog and Sanity CMS are OPTIONAL.** Not every site needs a blog. Ask the user before setting up Phase 6.
+**Model & delegation policy (read once, apply throughout):**
+- The MAIN THREAD (the frontier model) does: interpretation, design
+  direction, copy leads, section briefs, all reviews, and every user
+  interaction. Subagents cannot ask the user questions — gather everything
+  at gates BEFORE delegating.
+- DELEGATE to the plugin agents (they carry cheaper models):
+  `haazel-scout` (bulk crawling/verification), `haazel-copywriter` (copy
+  expansion), `haazel-section-builder` (section implementation from briefs),
+  `haazel-asset-runner` (CLI asset generation/post-processing),
+  `haazel-qa` (mechanical checks). Launch independent agents in parallel.
+- Connector-level MCPs (Higgsfield, browser tools, Sanity) are called from
+  the MAIN THREAD only — never assume a subagent can reach them.
 
-## Prerequisites
-- **Scaffold repo** — cloned fresh from `https://github.com/micheauxspencer/haazel-scaffold` each build (includes all 14 cinematic components: CanvasHero, TextMaskReveal, KineticMarquee, SpotlightBorderCards, AccordionSlider, OdometerCounter, CurtainReveal, ColorShiftSection, StickyStack, HorizontalScroll, GradientStrokeText, CursorGlow, NoiseOverlay, TiltCard)
-- **GSAP Master MCP server** — provides `understand_and_create_animation`, `optimize_for_performance`, `create_production_pattern`, `debug_animation_issue` tools. Install: `claude mcp add-json gsap-master '{"command":"npx","args":["bruzethegreat-gsap-master-mcp-server@latest"]}'`
-- **FAL_KEY** in environment (`export FAL_KEY="..."`) — for Nano Banana Pro and Kling v3 Pro image/video generation
-- **Git** installed
-- **Node.js 20+** and **npm**
-- **ffmpeg** (optional) — only needed if using scroll-driven canvas video heroes (for frame extraction)
-- **Sanity MCP server** connected — only needed if user requests blog/CMS in Phase 7
+**Rules:** `references/hard-rules.md` is global law. The chosen archetype's
+file in `references/archetypes/` layers its own mandates (motion policy,
+module bans, section recipes). Read both before Phase 3.
 
-## Working Directory
-
-Before starting, ASK the user: "Where should I create the project? (default: current directory)"
-
-All `{PROJECT_PATH}` references below use this user-chosen directory.
-
-## HARD RULES (ENFORCE EVERY BUILD)
-
-1. **No generic layouts.** Every section must use a cinematic module (TextMaskReveal, SpotlightBorderCards, KineticMarquee, AccordionSlider, OdometerCounter, CurtainReveal, ColorShiftSection, StickyStack, HorizontalScroll, etc.) — NOT basic shadcn card grids with fade-up animations.
-2. **No dark vignettes on heroes.** No gradient overlays darkening edges. Big headlines get strong text-shadow ONLY. Small text elements get individual backdrop pills (`background: rgba(x,x,x,0.7); backdrop-filter: blur(4px); padding: 4px 14px; display: inline-block`).
-3. **Always inline SVGs, never emojis.** Every icon and visual must be an inline SVG.
-4. **Font contrast minimums.** Body text `#999` minimum on dark, `#555` on light. `--muted` is for captions ONLY, never body text.
-5. **Cultural adaptation.** When a business has cultural identity (Japanese, Italian, French, etc.), lean into it: native language text, cultural fonts, vertical text, cultural motifs as SVG dividers, native script in marquees.
-6. **Use GSAP Master MCP** for all animation code. Don't write GSAP from memory — use `understand_and_create_animation` for generation, `optimize_for_performance` for 60fps optimization, `create_production_pattern` for battle-tested patterns.
-7. **CursorGlow + NoiseOverlay** on every cinematic/luxury/creative build. Film grain at 2-4% opacity. Cursor glow color matches brand accent.
-8. **One easing curve** for all interactive transitions: `cubic-bezier(.16, 1, .3, 1)`
-
----
-
-## Phase 1: Domain Analysis & Brand Extraction (THOROUGH — NOT A QUICK GLANCE)
-
-**Use the haazel-brand-analyzer skill for this phase.**
-
-**DO NOT guess colors from a quick WebFetch.** You must extract REAL computed styles from the live DOM and count usage frequency to find the TRUE palette, not what looks right at a glance.
-
-If the user provides a domain URL:
-
-### 1a. Navigate and wait for full load
-Open the site in Chrome, wait for JS to render (many sites are SPA/JS-heavy):
-```
-Navigate to URL → wait 4-5 seconds → take screenshot
-```
-
-### 1b. Deep color extraction (CRITICAL)
-Execute JavaScript on the LIVE page to extract EVERY computed color and count frequency:
-```javascript
-// Count every background-color and color on every element
-const colorCount = {};
-document.querySelectorAll('*').forEach(el => {
-  const style = getComputedStyle(el);
-  ['backgroundColor', 'color', 'borderColor'].forEach(prop => {
-    const val = style[prop];
-    if (val && val !== 'rgba(0, 0, 0, 0)' && val !== 'transparent') {
-      colorCount[val] = (colorCount[val] || 0) + 1;
-    }
-  });
-});
-// Sort by frequency — the MOST USED colors are the real brand colors
-const sorted = Object.entries(colorCount).sort((a,b) => b[1] - a[1]);
-JSON.stringify(sorted.slice(0, 20));
-```
-
-This gives the TRUE palette ranked by actual usage. The most-used background color IS the brand background. The most-used text color IS the brand foreground. The color used on buttons/links IS the accent. **Do NOT override this with assumptions.**
-
-### 1c. Font extraction
-```javascript
-const fontCount = {};
-document.querySelectorAll('*').forEach(el => {
-  const ff = getComputedStyle(el).fontFamily;
-  if (ff) { fontCount[ff] = (fontCount[ff] || 0) + 1; }
-});
-const fontsSorted = Object.entries(fontCount).sort((a,b) => b[1] - a[1]);
-JSON.stringify(fontsSorted.slice(0, 10));
-```
-
-### 1d. Download actual brand assets
-```javascript
-// Find logo images
-const logos = [...document.querySelectorAll('img, svg')]
-  .filter(el => {
-    const src = el.src || el.getAttribute('src') || '';
-    const cls = el.className || '';
-    const alt = el.alt || '';
-    return /logo|brand|header/i.test(src + cls + alt);
-  })
-  .map(el => ({ tag: el.tagName, src: el.src, alt: el.alt, width: el.width }));
-JSON.stringify(logos);
-```
-
-If logo is an image URL → download it to `public/images/logo.{ext}`
-If logo is an inline SVG → extract the SVG markup for use in the site
-
-### 1e. Extract text content, links, contact info
-```javascript
-// Navigation links
-const navLinks = [...document.querySelectorAll('nav a, header a')]
-  .map(a => ({ text: a.textContent?.trim(), href: a.href }));
-
-// Social links
-const socials = [...document.querySelectorAll('a[href*="instagram"], a[href*="tiktok"], a[href*="facebook"], a[href*="linkedin"], a[href*="twitter"]')]
-  .map(a => ({ href: a.href }));
-
-// Phone numbers
-const phones = document.body.textContent.match(/\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g);
-
-// Email addresses
-const emails = document.body.textContent.match(/[\w.-]+@[\w.-]+\.\w{2,}/g);
-
-JSON.stringify({ navLinks, socials, phones, emails });
-```
-
-### 1f. Screenshot key pages
-Take screenshots of:
-- Homepage (above the fold)
-- Homepage (scrolled to middle)
-- About page (if accessible)
-- Menu/Services page (if accessible)
-
-### 1g. Analyze imagery style
-Look at the photos on the site:
-- Dark moody vs bright airy?
-- Close-up food shots vs wide environment shots?
-- Candid vs staged?
-- Color grading (warm, cool, desaturated, neon)?
-- Are they using stock photos or custom photography?
-
-### Output: Brand Extraction Report
-Present findings as:
-
-```
-## Brand Extraction: {Domain}
-
-### Color Palette (by usage frequency)
-| Rank | Color | Hex | Usage Count | Role |
-|------|-------|-----|-------------|------|
-| 1 | Deep navy | #060416 | 4200 | Background |
-| 2 | Golden beige | #EED8C3 | 3719 | Primary/dominant |
-| 3 | Warm cream | #FAF5EF | 1850 | Text/foreground |
-| 4 | Crimson red | #D72626 | 21 | CTA accent only |
-...
-
-### Typography
-| Font Family | Usage Count | Role |
-|-------------|-------------|------|
-| "nocturne-serif" | 3400 | Display/headings |
-| "Clarkson" | 2800 | Body text |
-...
-
-### Brand Assets Found
-- Logo: [downloaded to public/images/logo.svg]
-- Favicon: [URL]
-- OG Image: [URL]
-
-### Contact Info
-- Phone: (647) 930-2623
-- Email: ...
-- Address: 3175 Rutherford Rd, Unit 28, Vaughan
-
-### Social Links
-- Instagram: @yokai.izakaya
-- TikTok: @yokai.izakaya
-
-### Voice Analysis
-- Tone: [from actual copy on the site]
-- Key phrases: [from actual headlines]
-```
-
-### Pause Point
-Show the FULL extraction report with color frequency data. Ask: "Does this match what you see? Any corrections?"
-
-**The color frequency data is the truth.** If red only appears 21 times and golden beige appears 3719 times, the brand primary is golden beige — not red. Red is an accent. Get this right or the whole site will look wrong.
+**Artifacts:** every phase writes to the project's `design/` directory:
+`BRIEF.md`, `extraction.json`, `BRAND_BRIEF.md`, `directions/board-*.html`,
+`tokens.json`, `DESIGN_SYSTEM.md`, `DESIGN_SYSTEM.html`, `SECTION_PLAN.md`,
+`COPY.md`, `ASSETS.md`, `QA_REPORT.md`, `GAP-ANALYSIS.md`. These are the
+project's memory — later phases and future sessions read them instead of
+re-deriving.
 
 ---
 
-## Phase 2: Brand Guide Generation
+## Phase 0 — Intake (one gate, everything decided)
 
-From the Phase 1 analysis, generate a complete brand guide:
+Parse the invocation first. `/haazel-build new acme.com — SaaS site` pre-answers
+domain + archetype; `redesign <url>` sets mode=redesign. Don't re-ask what
+the one-liner already said.
 
-### Colors
-- Primary color + dark/light variants
-- Secondary color
-- Accent color (used for CursorGlow, neon effects, spotlight borders)
-- Background, foreground, muted, card, border colors
-- Ensure sufficient contrast ratios (WCAG AA minimum)
+**Silent runtime detection (before asking anything):** determine which asset
+tiers are actually available —
+- Higgsfield MCP: ToolSearch for `generate_image` / `generate_video`
+  (Higgsfield server tools). Present only if found.
+- FAL: `FAL_KEY` in env or `.env.local`.
+- ffmpeg: `ffmpeg -version` exit 0 (affects CanvasHero frame sequences; if
+  absent, video heroes use the mp4 VideoBackground path).
+- Browser tools (for recon): Claude Browser pane tools, else claude-in-chrome,
+  else WebFetch-only degraded mode.
 
-### Typography — AVOID GENERIC FONTS
-Never use Inter, Roboto, Arial, or system fonts for display/headings. Choose distinctive, characterful fonts:
-- Display font — for hero headlines (e.g., Playfair Display, Space Grotesk, Bebas Neue, Syne)
-- Heading font — condensed bold for section headings (e.g., Oswald, Barlow Condensed)
-- Body font — readable but not boring (e.g., DM Sans, Outfit, Satoshi)
-- Accent/mono font — for stats, code, timestamps (e.g., JetBrains Mono, IBM Plex Mono)
-- Cultural font — if business has cultural identity (Noto Serif JP, etc.)
+**Gate 0 — ONE batched AskUserQuestion (≤4 questions):**
+1. **Archetype** (skip if given): cinematic brand site / SaaS marketing /
+   dashboard-app UI / local lead-gen / commerce drop (editorial via Other).
+2. **Source**: analyze an existing domain / net-new brand / redesign
+   in-place of an existing repo.
+3. **Scope + CMS**: Home one-pager / Home + up to 3 pages / full multi-page
+   with programmatic SEO pages; blog+CMS yes/no.
+4. **Asset tier** (options limited to what detection found, with costs from
+   `references/asset-costs.md`): Premium AI (Higgsfield MCP) / Premium AI
+   (FAL) / Stock (verified Unsplash) / CSS-only (token-derived gradients,
+   SVG, type). Note: video is a separate per-clip approval later regardless.
 
-### Voice
-- 3-5 tone adjectives
-- 3-5 brand personality adjectives
-- Banned phrases (clichés, overused terms)
-- Writing style description
+Then confirm working directory + slug in one short message, and offer the
+inspiration intake: "Drop screenshots or URLs into `design/inspiration/`
+(or paste URLs now) and I'll fold them into the direction work — optional."
 
-### Imagery
-- Photography style (photorealistic, editorial, etc.)
-- Subject matter relevant to industry
-- Lighting preferences
-- Camera/lens suggestions for FAL.ai prompts
-- Keywords to avoid in generated images
+Write `design/BRIEF.md` recording every answer + detection results.
 
-### Output
-Write all values into `brand.config.ts`. This file drives everything else.
+## Phase 1 — Recon (only when a source domain exists)
+
+Main thread: run the live-DOM extraction from
+`references/extraction-snippets.md` on the domain (computed-style color
+frequency, font stacks, logo, nav map, socials/phones/emails) + full-page
+screenshots of home and 1–2 inner pages. Never settle for a quick WebFetch
+when browser tools exist; if only WebFetch is available, mark
+`"confidence": "low"` in the output.
+
+In parallel, launch `haazel-scout`: bulk copy dump per page, link map,
+contact/hours/service inventory; for leadgen archetype also the market scan
+(competitor headlines, review counts, city/service keywords).
+
+The main thread interprets both into `design/extraction.json` +
+`design/BRAND_BRIEF.md` (what the brand IS vs what the old site merely
+looks like — flag dated-but-loved elements vs accidental defaults).
+
+**Gate 1:** present the Brand Extraction Report (colors ranked by actual
+usage, fonts, voice read, imagery read). Ask: "Corrections before this
+becomes the design foundation?"
+
+## Phase 2 — Scaffold clone (mechanical, early on purpose)
+
+```
+npx degit micheauxspencer/haazel-scaffold#v0.2.0 <slug>
+cd <slug> && npm install
+```
+Pin the tag. If degit fails (Windows long paths, cache staleness — retry
+with `--force` first), fall back to
+`git clone --branch v0.2.0 --depth 1 https://github.com/micheauxspencer/haazel-scaffold <slug>`
+then delete `.git` and `git init`.
+
+Cloning now means every later phase grounds against the real
+`src/components/COMPONENT_CATALOG.md` — never plan against remembered
+component names.
+
+## Phase 3 — Direction boards (main-thread taste, user's choice)
+
+Read `references/archetypes/<archetype>.md` + BRAND_BRIEF + anything in
+`design/inspiration/`. Compose **2–3 distinct art directions** as
+self-contained HTML boards from `templates/direction-board.html.tpl` into
+`design/directions/board-{a,b,c}.html` — each: palette swatches with usage
+shares, Google-Fonts type specimen (pairings live-rendered), radius/density
+feel, one hero sketch block, motion-policy statement, three adjectives.
+Directions must genuinely differ (e.g. "heritage editorial" vs "electric
+minimal"), not three tints of one idea.
+
+**Gate 3:** open the boards in the browser; user picks A/B/C or a mix
+("A's type with B's palette" is a valid answer — merge deliberately).
+
+## Phase 4 — Design system (invoke haazel-design-system)
+
+Invoke the **haazel-design-system** skill with: chosen direction, archetype,
+BRAND_BRIEF, scope. It produces `design/tokens.json` (validated against the
+plugin's `templates/tokens.schema.json`, WCAG-checked), renders
+`DESIGN_SYSTEM.md` + `DESIGN_SYSTEM.html`, then runs:
+
+```
+npm run tokens:apply && npm run tokens:check && npx next build
+```
+
+**Gate 4:** open `DESIGN_SYSTEM.html` (the visual spec is the deliverable —
+never markdown alone). Approve or adjust; re-run apply until approved.
+
+## Phase 5 — Content architecture
+
+Main thread writes `design/SECTION_PLAN.md`: the sitemap (per scope), and per
+page a narrative arc table — section order, its job in the story, energy
+level (the rhythm must vary: no three quiet sections in a row, no wall of
+loud), the component/module for it (FROM the catalog + archetype recipes),
+the asset it needs, the copy lead. Check module choices against
+`design/tokens.json` `motion.bannedModules` and the archetype's bans.
+
+Main thread writes the load-bearing copy itself: H1s, hero lines, manifesto,
+section headlines — voice per tokens.json. Then launch `haazel-copywriter`
+with SECTION_PLAN + voice rules to expand supporting copy into
+`design/COPY.md` (body paragraphs, FAQs, microcopy, meta descriptions).
+Review the expansion — banned phrases, fabricated claims, flat rhythm.
+
+**Gate 5:** present SECTION_PLAN (this is the cheapest moment to change
+course — say so).
+
+## Phase 6 — Assets (invoke haazel-assets)
+
+Invoke the **haazel-assets** skill with SECTION_PLAN's asset table. It
+enforces its own staging: plan+cost table → approval → images → **image
+review gate** → per-clip video cost acknowledgment → generation → frames
+(ffmpeg) or mp4 fallback. Higgsfield runs in the main thread (MCP); FAL runs
+through `haazel-asset-runner` (`npm run gen:image` / `gen:video`). Everything
+lands in `public/` and is manifested in `design/ASSETS.md` with per-asset
+provider, prompt, and cost.
+
+CSS-only tier: skip generation; the design system's gradient/SVG/type rules
+carry the visuals.
+
+## Phase 7 — Build sections
+
+For each page, the main thread writes a **build brief**: section list with
+exact component choices + props, token utilities to use, copy refs (COPY.md
+anchors), asset paths, layout notes (which primitives, where the overlap
+breaks, rhythm), and the banned list. Include the scaffold's
+`src/components/sections/SECTION_SPEC.md` + `src/components/COMPONENT_CATALOG.md`
+paths as required reading.
+
+Launch `haazel-section-builder` agents in parallel — one per page (or one
+per 3–4 sections on heavy pages). They write `src/components/sections/<slug>/`
+compositions and the page files.
+
+The main thread then does the integration pass ITSELF: nav wiring, footer,
+cross-page rhythm, section transitions, `layout.tsx` ambient modules per
+tokens (`motion.ambient`), metadata/OG per page.
+
+## Phase 8 — Ship hygiene
+
+```
+npm run prune -- --keep <kept-routes> --write
+```
+Then verify: navLinks/Footer match live routes, `sitemap.ts` clean,
+`package.json` name = slug, `robots.ts`, OG image set, JSON-LD type right
+for the archetype (leadgen → LocalBusiness with real NAP from BRIEF),
+`.env.example` accurate. Fix every prune warning.
+
+## Phase 9 — QA (mechanical agent + main-thread eye)
+
+Launch `haazel-qa`: `npm run build`, `npm run tokens:check`,
+`npm run check:catalog`, internal-link check, image 200s/paths, grep gates
+(emoji, hex literals in sections/, lorem, banned phrases, banned modules,
+`href` to pruned routes). It writes the mechanical half of
+`design/QA_REPORT.md`.
+
+Main-thread visual pass (never delegated): dev server up, screenshot every
+page at 375 / 768 / 1440 + `prefers-reduced-motion`, judge against
+DESIGN_SYSTEM.md and the haazel-design checklist. Fix or delegate fixes;
+re-shoot until it passes. For any section that fights you twice, invoke the
+**haazel-design** skill on it.
+
+Write `design/GAP-ANALYSIS.md` from `templates/gap-analysis.md.tpl`: what a
+template would have given / what this build did (bespoke type system, asset
+direction, motion system, SEO architecture, hygiene) / what still separates
+it from a top-tier engagement (custom photography, conversion copy audit,
+analytics, full a11y audit, perf budget, legal pages) — honest, itemized.
+
+## Phase 10 — Git + optional CMS
+
+```
+git init && git add -A && git commit
+```
+Commit message: what was built, archetype, direction chosen. **Never deploy
+automatically** — hand the user the repo + `npx vercel` instructions.
+
+If BRIEF said blog: invoke **haazel-auto-blog** now (Sanity project, schema,
+scheduled task), second commit.
+
+Delivery summary: what shipped, the design-system trio paths, ASSETS costs
+total, QA results, GAP-ANALYSIS highlights, exact next steps (deploy, DNS,
+env vars, real content swaps).
 
 ---
 
-## Phase 3: Aesthetic Direction + Visual Planning
-
-Present the user with 7 style presets, plan which cinematic modules to use, AND plan all visual assets that need to be created:
-
-### Style Presets
-1. **Cinematic** — Dark, immersive. Full GSAP. Best for: agencies, studios, restaurants, luxury brands.
-2. **Minimalist** — Clean, whitespace. Subtle. Best for: SaaS, consulting, professional services.
-3. **Brutalist** — Raw, hard edges, glitch. Best for: creative agencies, fashion, art, music.
-4. **Luxury** — Serif, gold/cream, slow elegant. Best for: real estate, hospitality, jewelry.
-5. **Corporate** — Professional, card-based. Best for: finance, healthcare, legal.
-6. **Creative Agency** — Playful, asymmetric, bold. Best for: design agencies, startups.
-7. **E-commerce** — Product grid, conversion-focused. Best for: retail, DTC brands.
-
-### Cinematic Module Selection (CRITICAL)
-
-Pick 4-6 modules from the library based on industry. Use this guide:
-
-| Industry | Recommended Modules |
-|----------|-------------------|
-| Restaurant/Food | ColorShift, AccordionSlider, KineticMarquee, OdometerCounter, CurtainReveal |
-| Luxury/Jewelry | TextMaskReveal, CurtainReveal, SpotlightBorderCards, HorizontalScroll |
-| Tech/SaaS | SpotlightBorderCards, StickyStack, GradientStrokeText, KineticMarquee |
-| Creative/Agency | AccordionSlider, HorizontalScroll, TextMaskReveal, CursorGlow |
-| Service Business | OdometerCounter, StickyStack, SpotlightBorderCards, KineticMarquee |
-| Portfolio | AccordionSlider, HorizontalScroll, TextMaskReveal, CurtainReveal |
-| Real Estate | CurtainReveal, HorizontalScroll, OdometerCounter, SpotlightBorderCards |
-
-### Available Cinematic Components (in scaffold src/components/cinematic/)
-- **CanvasHero** — Scroll-driven frame sequence OR static hero with scroll-fade content
-- **TextMaskReveal** — Giant outlined text fills with color on scroll (clipPath animation)
-- **KineticMarquee** — Scroll-velocity-reactive infinite text strip
-- **SpotlightBorderCards** — Grid with cursor-tracking border glow on each card
-- **OdometerCounter** — Mechanical rolling digit counter
-- **AccordionSlider** — Expandable image panels (flex: 1 → flex: 5)
-- **ColorShiftSection** — Background/text color transitions on scroll
-- **StickyStack** — Pinned visual + scrolling content cards
-- **CurtainReveal** — Two panels part like curtains revealing content
-- **HorizontalScroll** — Scroll-hijack horizontal gallery
-- **GradientStrokeText** — Animated gradient outlined text
-- **CursorGlow** — Page-wide cursor-following radial gradient
-- **NoiseOverlay** — Subtle film grain overlay
-- **TiltCard** — 3D perspective tilt with spotlight
-
-### Visual Asset Plan (CRITICAL — DO NOT SKIP)
-
-For every section you're building, plan the visual assets it needs. Present this as a table to the user for approval BEFORE generating anything:
-
-| Section | Asset Needed | Type | Generation Method | Prompt/Description |
-|---------|-------------|------|-------------------|-------------------|
-| Hero | Hero background | Video (frame sequence) OR Image | Kling via WaveSpeed + ffmpeg OR FAL.ai | "Moody izakaya interior, neon red glow..." |
-| About | Interior photo | Image | FAL.ai (recraft-v3) | "Shot on Sony A7III, 35mm f/1.4..." |
-| AccordionSlider panel 1 | Food photo | Image | FAL.ai | "Sashimi platter, dramatic lighting..." |
-| AccordionSlider panel 2 | Food photo | Image | FAL.ai | "Yakitori on charcoal grill..." |
-| ... | ... | ... | ... | ... |
-
-**For each asset, decide:**
-1. **Static image** → FAL.ai with brand imagery config (cameras, lenses, lighting, subjects)
-2. **Scroll-driven video** → Generate image first (FAL.ai or Nano Banana Pro), then animate with Kling via WaveSpeed, then extract JPEG frames with ffmpeg
-3. **Existing asset** → Client provides, or source from Unsplash (verify URL returns 200)
-
-**Image prompt formula** (from brand.config.ts imagery settings):
-```
-"Shot on {camera}, {lens}, {scene matching section content}, {lighting}, {color temperature}, candid documentary style, {avoid keywords}"
-```
-
-**Video prompt formula** (for Kling/WaveSpeed):
-```
-"Slow {motion type}: {subject description}. {lighting}. {camera movement}. Cinematic, no text, no watermarks."
-```
-Motion types: dolly in, slow pan, gentle zoom, parallax shift, orbit
-
-### Pause Point
-Show the visual asset plan. Ask: "Does this look right? Should I generate these assets? The video generation will cost ~$0.50 per 5s clip on WaveSpeed."
-
-Wait for approval before proceeding to Phase 4.
-
----
-
-## Phase 4: Visual Asset Creation (STAGED — Images First, Video After Approval)
-
-**Three stages with approval gates. NEVER skip to video without approved images.**
-
-### Stage 1: Generate ALL static images first (FREE via FAL.ai)
-
-Generate every image from the Phase 3 plan. This is free (FAL.ai), so generate liberally:
-
-```bash
-FAL_KEY="$FAL_KEY" npx tsx scripts/generate-blog-image.ts "{section-name}" "{prompt}"
-```
-
-Or use FAL.ai directly:
-- Model: `fal-ai/nano-banana-pro` for clean product shots on plain backgrounds, `fal-ai/recraft-v3` for atmospheric scenes
-- **Size for hero first-frames: ALWAYS `landscape_16_9`** — Kling output matches input aspect ratio, and the canvas is viewport-width. Square images = wasted space and ugly cropping. NEVER generate first-frame images as square.
-- Size: `landscape_16_9` for hero/backgrounds/first-frames, `portrait_4_5` for accordion panels, `square_1_1` for cards only
-- Style: `realistic_image` (recraft) or omit (nano-banana)
-
-Save to `public/images/` with descriptive names:
-```
-public/images/
-├── hero-bg.jpg              (hero background — 1920x1080)
-├── hero-first-frame.jpg     (starting frame for video, if planned)
-├── about-interior.jpg       (about section)
-├── menu-sashimi.jpg         (accordion panel 1)
-├── menu-skewers.jpg         (accordion panel 2)
-├── menu-cocktails.jpg       (accordion panel 3)
-└── ...
-```
-
-If an image doesn't look right, **regenerate it** with a refined prompt. Iterate until good.
-
-### ── PAUSE: Image Review ──
-Show ALL generated images to the user. Ask:
-"Here are the generated images for each section. Which ones work? Which need regeneration? And which image should I use as the starting frame for the hero video?"
-
-**Wait for explicit approval before spending money on video.**
-
-### Stage 2: Animate approved hero image into video (COSTS MONEY)
-
-**Only proceed if:**
-1. User approved the hero first-frame image
-2. User confirmed they want scroll-driven video (not just a static hero)
-3. User acknowledged the cost (~$0.50-0.56 per 5s clip)
-
-**Step 1: Verify image is landscape 16:9** (Kling output matches input aspect ratio)
-The first-frame MUST already be landscape from generation (generated with `image_size: 'landscape_16_9'`). If it's square or portrait, REGENERATE IT in landscape — do NOT pad/crop a square image. Kling will animate whatever aspect ratio you give it, and the canvas renders at viewport width.
-
-If the image needs resizing to exactly 1920x1080:
-```javascript
-const sharp = require('sharp');
-sharp('public/images/hero-first-frame.jpg')
-  .resize(1920, 1080, { fit: 'cover' })
-  .jpeg({ quality: 95 })
-  .toFile('public/images/hero-1080p.jpg');
-```
-
-**Step 2: Upload to litterbox** (24hr temp hosting for WaveSpeed)
-```bash
-curl -s -F "reqtype=fileupload" -F "time=24h" -F "fileToUpload=@public/images/hero-1080p.jpg" https://litterbox.catbox.moe/resources/internals/api.php
-```
-
-**Step 3: Submit to WaveSpeed/Kling**
-```bash
-curl -X POST "https://api.wavespeed.ai/api/v3/kwaivgi/kling-video-o3-pro/image-to-video" \
-  -H "Authorization: Bearer $WAVESPEED_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"image": "{litterbox_url}", "prompt": "{motion prompt}", "duration": 5, "cfg_scale": 0.7, "sound": false}'
-```
-
-Motion prompt examples:
-- Restaurant: "Slow dolly forward, steam rises from dishes, neon signs glow warmly, ambient movement"
-- Agency: "Gentle orbit around workspace, screens emit soft light, city bokeh through windows"
-- Luxury: "Slow zoom into product, spotlight catches details, shallow depth of field shifts"
-
-**Step 4: Poll for result** (every 15s, takes 1-3 minutes)
-```bash
-curl "https://api.wavespeed.ai/api/v3/predictions/{id}/result"
-```
-
-Download the MP4 to `public/assets/hero-loop.mp4`
-
-### ── PAUSE: Video Review ──
-Show/describe the generated video. Ask: "Does this look good for the scroll-driven hero? If not, I can regenerate with a different motion prompt."
-
-### Stage 3: Extract JPEG frames for CanvasHero
-
-**Only after video is approved:**
-
-```bash
-# Extract at 24fps, 720p for web performance
-mkdir -p public/assets/frames
-ffmpeg -i public/assets/hero-loop.mp4 -vf "fps=24,scale=1280:720" -q:v 4 public/assets/frames/frame-%04d.jpg
-
-# Count frames
-FRAME_COUNT=$(ls public/assets/frames/ | wc -l)
-echo "Extracted $FRAME_COUNT frames"
-```
-
-Update the CanvasHero component with the actual frame count:
-```tsx
-<CanvasHero frameCount={FRAME_COUNT} framePath="/assets/frames/frame-" />
-```
-
-### No Video? That's Fine.
-If the user doesn't want video or can't justify the cost, the CanvasHero falls back to `staticImage` mode with a parallax effect on the approved hero-bg.jpg. Still cinematic, just not scroll-driven video.
-
-Motion prompt examples:
-- Restaurant: "Slow dolly forward through izakaya, neon signs glow, steam rises from grill, warm amber light"
-- Agency: "Slow orbit around modern workspace, screens glowing, city lights through windows"
-- Luxury: "Gentle zoom into jewelry display, soft spotlight catches facets, shallow depth of field"
-
-**Step 3: Extract JPEG frames with ffmpeg**
-```bash
-# 720p frames for scroll animation (lighter files)
-ffmpeg -i public/assets/hero-loop.mp4 -vf "fps=24,scale=1280:720" -q:v 4 public/assets/frames/frame-%04d.jpg
-
-# Count frames
-ls public/assets/frames/ | wc -l
-```
-
-**Step 4: Update CanvasHero frameCount**
-Set `frameCount` in the page component to the actual number of extracted frames.
-
-### 4c. Unsplash Fallback
-
-If FAL.ai or video generation isn't available/wanted, use Unsplash:
-```
-https://images.unsplash.com/photo-{ID}?w={width}&h={height}&fit=crop&q=80
-```
-**Always verify** each URL returns 200 before using. Broken images kill the premium feel.
-
-### Pause Point
-Show generated assets to user. Ask: "Do these look right for the site?"
-
----
-
-## Phase 5: Scaffold & Customize
-
-1. **Clone the scaffold fresh** from GitHub into the user's chosen `{PROJECT_PATH}/{CLIENT_SLUG}` directory:
-   ```bash
-   cd "{PROJECT_PATH}"
-   npx degit micheauxspencer/haazel-scaffold {CLIENT_SLUG}
-   cd {CLIENT_SLUG}
-   ```
-
-   `degit` downloads the repo without git history — perfect for a fresh scaffold. Windows users: if degit fails, fallback is:
-   ```bash
-   git clone --depth 1 https://github.com/micheauxspencer/haazel-scaffold.git {CLIENT_SLUG}
-   rm -rf {CLIENT_SLUG}/.git
-   ```
-
-2. Write `src/lib/brand.config.ts` with ALL Phase 2-3 values (replace the default Haazel Studio config entirely)
-
-3. Update `src/app/globals.css` — modify `:root` CSS custom properties with brand colors in oklch format. This is a DARK-FIRST brand system — `:root` and `.dark` should match for dark brands.
-
-4. Update `src/app/layout.tsx` — change `next/font/google` imports to match brand typography. Add cultural font (e.g. Noto Serif JP) if needed.
-
-5. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-6. Verify build works:
-   ```bash
-   npx next build
-   ```
-
----
-
-## Phase 5: Build Pages with Cinematic Modules
-
-**THIS IS WHERE THE MAGIC HAPPENS. No generic sections.**
-
-### GSAP Master MCP Workflow (USE FOR EVERY ANIMATION)
-
-For every animation effect on the page:
-1. **Generate**: Use GSAP Master MCP `understand_and_create_animation` — describe the effect in natural language
-2. **Optimize**: Run `optimize_for_performance` on the generated code — get 60fps + mobile variant
-3. **Pattern**: Use `create_production_pattern` for battle-tested hero/scroll/text patterns
-4. **Debug**: If anything stutters or breaks, use `debug_animation_issue`
-
-### Home Page Composition — Content-Driven, Not Templated
-
-**DO NOT use a fixed section sequence.** Every site is unique. Compose the page based on:
-1. **What the business actually needs to communicate** (menu? portfolio? services? trust?)
-2. **What content exists** (do they have great photography? testimonials? stats worth showing?)
-3. **What emotional arc fits the brand** (mystery → reveal? authority → trust? playful → conversion?)
-
-### Composition Process
-
-**Step 1: Identify the narrative arc.** Ask: what story does this site need to tell? Examples:
-- Restaurant: "Enter our world → see what we offer → feel the vibe → book a table"
-- SaaS: "Understand the problem → see the solution → trust the proof → start free"
-- Portfolio: "See the work → understand the craft → hire us"
-- Local service: "Know who we are → see what we do → trust us → call now"
-
-**Step 2: Map content blocks to that arc.** Each block needs a purpose:
-- **Establish mood** → CanvasHero, ColorShiftSection, CursorGlow
-- **Reveal identity** → TextMaskReveal, GradientStrokeText, CurtainReveal
-- **Build energy** → KineticMarquee, AccordionSlider
-- **Show offerings** → SpotlightBorderCards, StickyStack, HorizontalScroll
-- **Prove credibility** → OdometerCounter, TiltCard (testimonials)
-- **Drive action** → CurtainReveal (dramatic CTA), MagneticButton
-- **Create rhythm** → KineticMarquee (as dividers, not just at top/bottom)
-
-**Step 3: Sequence for flow.** Alternate between:
-- High-energy moments (hero, marquee, reveal) and breathing room (story sections, stats)
-- Full-width immersive sections and contained content blocks
-- Scroll-driven effects and static reading sections
-
-**Step 4: Cut ruthlessly.** A 5-section site with perfect pacing beats a 9-section site that drags. Not every module needs to appear. Use 4-7 sections per page.
-
-### Module Selection — Match to Content, Not Industry
-
-Ask these questions:
-- **Does the brand name deserve a reveal moment?** → TextMaskReveal or CurtainReveal
-- **Are there 3+ visual items to showcase?** → AccordionSlider or HorizontalScroll
-- **Are there impressive numbers?** → OdometerCounter
-- **Does the offering need explanation?** → StickyStack (pinned visual + scrolling steps)
-- **Are there 4+ services/features?** → SpotlightBorderCards
-- **Does the brand have cultural identity?** → KineticMarquee with native script, cultural SVG dividers
-- **Is there a strong CTA moment?** → CurtainReveal
-- **Does the brand shift between moods?** → ColorShiftSection
-
-### Cultural Adaptation (when applicable)
-- **Japanese**: Native characters in headlines/marquees, Noto Serif JP, noren SVGs, vertical text (`writing-mode: vertical-rl`), Japanese farewells
-- **Italian**: Italian phrases, elegant serif, olive/terracotta tones, classical proportions
-- **French**: French accents, refined typography, muted luxury palette
-- **Latin American**: Warm palette, bold type, rhythmic layout
-- **Nordic**: Cool tones, extreme whitespace, understated motion
-- Adapt naturally — don't caricature. Weave culture in, don't slap it on.
-
-### Inner Pages
-- Inner pages use 3-5 cinematic modules (not all 14)
-- Match modules to page purpose (About → story-focused, Services → showcase-focused)
-- CursorGlow + NoiseOverlay on cinematic/luxury/creative builds
-
-### Image Generation
-Use FAL.ai to generate hero and section images matching brand imagery config:
-```bash
-FAL_KEY="$FAL_KEY" npx tsx scripts/generate-blog-image.ts "hero" "{prompt from brand imagery config}"
-```
-
----
-
-## Phase 6: Git Init + First Commit
-
-**This runs automatically at the end of every build.**
-
-```bash
-cd "{PROJECT_PATH}/{CLIENT_SLUG}"
-git init
-git add -A
-git commit -m "Initial build: {CLIENT_NAME} cinematic site via Haazel Build"
-```
-
-This gives the user a clean starting point they can push to any remote, deploy anywhere, or continue iterating on.
-
-**DO NOT deploy to Vercel automatically.** Deployment is the user's choice and timing.
-
----
-
-## Phase 7: Sanity CMS + Auto-Blog Setup (OPTIONAL)
-
-**Only run this phase if the user explicitly requests a blog or CMS.**
-
-Before starting, ASK: "Do you want a blog with auto-publishing for this site?"
-
-If yes → use the `haazel-auto-blog` skill:
-- Create Sanity project, deploy schemas, create initial documents
-- Set up scheduled task from template
-- Update `.env.local` with Sanity credentials
-- Commit the CMS integration as a second commit:
-  ```bash
-  git add -A
-  git commit -m "Add Sanity CMS + auto-blog configuration"
-  ```
-
-If no → skip entirely. The site works perfectly without Sanity/blog. The scaffold gracefully handles missing Sanity config (`isSanityConfigured` guard returns empty arrays).
-
----
-
-## Quality Checklist (VERIFY BEFORE DELIVERY)
-
-- [ ] No generic sections — every section uses a cinematic module
-- [ ] CursorGlow active (accent color)
-- [ ] NoiseOverlay at 2-4% opacity
-- [ ] Hero text uses strong text-shadow, NOT gradient overlays
-- [ ] Small text over images uses individual backdrop pills
-- [ ] All icons are inline SVGs, no emojis
-- [ ] Font contrast meets minimums (#999 dark, #555 light)
-- [ ] Cultural elements woven in (if applicable)
-- [ ] KineticMarquee speeds up on fast scroll
-- [ ] OdometerCounter digits roll mechanically
-- [ ] SpotlightBorderCards glow follows cursor
-- [ ] CurtainReveal opens smoothly on scroll
-- [ ] Animations optimized via GSAP Master MCP
-- [ ] Mobile responsive (375px to 1440px+)
-- [ ] All links clickable (tel:, mailto:, internal)
-- [ ] Git initialized with clean first commit
-- [ ] If blog requested: ISR working (60s revalidation)
-
----
-
-## Per-Client Checklist (What You Need)
-
-**Required:**
-1. Business name + domain (or competitor URL)
-2. Industry/niche
-3. Region/location
-4. Style preference (from 7 presets)
-
-**Optional (ask the user):**
-5. Want a blog? → triggers Phase 7 (Sanity + auto-blog)
-6. Blog schedule (e.g., "Tuesdays and Thursdays at 9am")
-7. Authority credentials (e.g., "10 years, 500+ projects")
-
-Everything else derives automatically. The build ends with a git repo ready to push.
+## Redesign mode
+
+Same chain with: Phase 1 mandatory and deeper (screenshot EVERY template,
+inventory what ranks — don't break URLs that earn traffic); Phase 2 asks
+"fresh scaffold + migrate" (default) vs "in-place restyle" (then tokens:apply
++ section-by-section replacement, no prune of live routes without a redirect
+plan); Phase 8 adds a redirect map for any changed URL.
+
+## Failure discipline
+
+- A gate answer of "Other" is an instruction, not an obstacle — fold it in.
+- If a phase's tool is missing (no browser, no ffmpeg, no FAL key), degrade
+  along the documented path and RECORD the degradation in BRIEF.md; never
+  silently skip quality.
+- If `npm run build` breaks after an agent's work, the agent that wrote it
+  gets the error verbatim to fix; the main thread only hand-fixes after two
+  failed rounds.

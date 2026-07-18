@@ -1,263 +1,115 @@
 ---
 name: haazel-cinematic
-description: Add cinematic GSAP animations to any Next.js project using the Cinematic Modules library and GSAP Master MCP. TextMaskReveal, SpotlightBorderCards, KineticMarquee, OdometerCounter, AccordionSlider, CurtainReveal, CanvasHero, and more. No generic fade-ups.
+description: Apply the cinematic GSAP motion system — scroll-scrub, masked reveals, ambient texture — to cinematic/luxury/creative-archetype builds, or add one sanctioned cinematic touch to any other archetype within its own motion policy. Components and their conventions live in the cloned scaffold's src/components/COMPONENT_CATALOG.md and src/components/cinematic/CONVENTIONS.md; GSAP Master MCP enhances authoring when connected but is never required. No generic fade-ups. Trigger on "make this cinematic", "add scroll animation", "this needs more motion", "cinematic modules", or /haazel-cinematic.
 ---
 
-# Haazel Cinematic — Premium GSAP Animation System
+# Haazel Cinematic — the motion system
 
-You transform websites from generic to cinematic using the Cinematic Modules library and GSAP Master MCP server. No fade-up-on-scroll basics. Every effect must be scroll-driven, cursor-reactive, or narratively purposeful.
+You compose and author cinematic motion: scroll-scrub sequences, masked text
+reveals, cursor reactivity, ambient texture. Use this skill standalone on
+any Next.js project, or within a haazel build wherever cinematic motion is
+called for — the full arsenal on cinematic-archetype builds, a single
+sanctioned touch elsewhere.
 
-Use this skill standalone or as Phase 5 of haazel-build.
+## Scope — read the archetype before reaching for the arsenal
 
-## HARD RULES
+This skill is the complete motion system for **cinematic, luxury, and
+creative-archetype** builds — `references/archetypes/cinematic.md` sets
+motion policy `cinematic`: scroll-scrub, masked reveals, and ambient grain,
+orchestrated into a narrative arc.
 
-1. **NEVER use basic ScrollReveal fade-ups as the primary animation.** Those are fallbacks only. Every section MUST use a cinematic module.
-2. **Use GSAP Master MCP for all animation code generation.** Don't write GSAP from memory.
-3. **No gradient overlays on heroes.** Strong text-shadow on headlines. Individual backdrop pills on small text.
-4. **All icons are inline SVGs.** Never emojis. Never passing React component references as props from server to client.
-5. **One easing curve:** `cubic-bezier(.16, 1, .3, 1)` for all interactive transitions.
-6. **CursorGlow + NoiseOverlay** on every cinematic/luxury/creative build.
+Every other archetype (saas, app, leadgen, commerce, editorial) sets its
+*own* motion policy in `references/archetypes/<archetype>.md` — e.g.
+`saas.md` is policy `restrained`: entrance reveals and micro-interactions
+only, with an explicit `bannedModules` list (no CursorGlow, no scroll-scrub
+pins). This skill still applies there, but only for the one cinematic
+moment a direction deliberately calls for (a single manifesto reveal, a
+slow logo marquee) — never for the whole page, and never for a module the
+archetype bans. **Read the archetype file first; it overrides instinct.**
 
-## Prerequisites
+## Component library — source of truth lives in the scaffold
 
-```bash
-npm install gsap lenis
-```
+Don't work from memory, and don't expect this file to enumerate the
+library — the cloned scaffold is the ground truth and it changes between
+scaffold versions. Read, every time:
 
-GSAP Master MCP must be installed:
-```bash
-claude mcp add-json gsap-master '{"command":"npx","args":["bruzethegreat-gsap-master-mcp-server@latest"]}'
-```
+- `src/components/COMPONENT_CATALOG.md` — every module: one-liner, props
+  signature verified against the code, archetype fit tags, reduced-motion
+  behavior.
+- `src/components/cinematic/CONVENTIONS.md` — the authoring rules every
+  module follows (summarized below).
 
----
+A few names to anchor the vocabulary, not to limit it: **CanvasHero**
+(scroll-driven frame-sequence hero), **TextMaskReveal** (clipPath fill on
+scroll), **KineticMarquee** (velocity-reactive infinite strip),
+**CurtainReveal** (parting panels), **SpotlightBorderCards** (cursor-glow
+card grid), **OdometerCounter** (mechanical digit roll). The catalog holds
+the rest — read it fresh rather than recalling a list from a prior build.
 
-## GSAP Master MCP Workflow
+## GSAP Master MCP — a detected enhancement, never a prerequisite
 
-For EVERY animation on the page, follow this process:
+Before writing bespoke animation code, check whether the GSAP Master MCP
+tools are connected (ToolSearch for `understand_and_create_animation`).
 
-### Step 1: Generate
-Use `understand_and_create_animation` tool with a natural language description:
-- "Scroll-driven text mask reveal where outlined text fills with red as user scrolls through"
-- "Kinetic marquee that speeds up based on scroll velocity"
-- "3D tilt card with cursor-tracking spotlight gradient"
+- **Detected** → use the four-step workflow below for anything that isn't
+  already a catalog module.
+- **Absent** → don't block, and don't tell the user to go install it
+  mid-build. Author the animation by hand against `CONVENTIONS.md` and the
+  nearest existing scaffold pattern: dynamic GSAP import, `gsap.context()`
+  cleanup, the house easing curve, a reduced-motion branch. The MCP makes
+  this faster and more consistent — it was never required to ship a
+  cinematic build.
 
-### Step 2: Optimize
-Run `optimize_for_performance` on the generated code:
-- Gets 60fps desktop + mobile-optimized variant
-- Adds `will-change`, reduces repaints, uses GPU-accelerated properties
-- Creates battery-efficient mobile fallback
+### The workflow (when detected)
 
-### Step 3: Pattern Check
-Use `create_production_pattern` for standard patterns:
-- Hero scroll sequences
-- Text reveal systems
-- Parallax depth layers
-- Page transitions
+For every bespoke animation:
 
-### Step 4: Debug
-If anything stutters, breaks, or conflicts (especially Lenis + ScrollTrigger):
-Use `debug_animation_issue` with a description of the problem.
+1. **Generate** — `understand_and_create_animation` with a natural-language
+   description: "scroll-driven text mask reveal where outlined text fills
+   with the accent color as the user scrolls," "kinetic marquee that
+   speeds up with scroll velocity," "3D tilt card with a cursor-tracking
+   spotlight gradient."
+2. **Optimize** — `optimize_for_performance` on the generated code: 60fps
+   desktop, a mobile-tuned variant, `will-change` and GPU-friendly
+   properties, a battery-conscious fallback.
+3. **Pattern** — `create_production_pattern` for standard shapes: hero
+   scroll sequences, text reveal systems, parallax depth layers, page
+   transitions.
+4. **Debug** — `debug_animation_issue` for anything that stutters, breaks,
+   or fights (Lenis + ScrollTrigger conflicts are the usual suspect).
 
----
+## Conventions — full detail in CONVENTIONS.md
 
-## Cinematic Components Library
+Every module, catalog or bespoke, follows
+`src/components/cinematic/CONVENTIONS.md`: reduced motion renders the
+complete **settled state** (no pin, no scrub, no loop — content fully
+visible), never a blank gap; cursor/hover modules gate on `usePointerFine`
+and must not hide content from touch users; every color is a design token
+or a `color-mix()` derivation off one — no raw hex, no rgb-triplet props.
+Read it before writing or reviewing any module.
 
-Located in `src/components/cinematic/`. Each is a self-contained "use client" component.
+## Module selection — content decides, never the industry alone
 
-### CanvasHero
-Scroll-driven frame sequence hero. Falls back to static image when no frames available.
-```tsx
-<CanvasHero frameCount={121} framePath="/assets/frames/frame-" staticImage="/hero.jpg">
-  <h1 style={{ textShadow: "0 4px 30px rgba(0,0,0,.9), 0 2px 10px rgba(0,0,0,.7)" }}>
-    Headline
-  </h1>
-  <span style={{ background: "rgba(12,10,8,0.7)", padding: "4px 14px", backdropFilter: "blur(4px)" }}>
-    Subtitle pill
-  </span>
-</CanvasHero>
-```
-- Section height: 300vh with sticky canvas
-- Content fades out on scroll (opacity 0, y -60 between 10-35%)
-- Frame extraction: `ffmpeg -i video.mp4 -vf "fps=24,scale=1280:720" -q:v 4 assets/frames/frame-%04d.jpg`
+The full selection heuristic (the "does this content need X" question
+table, and the industry-starting-point table) lives in
+`references/module-selection.md` — read it before picking modules for a
+page. **Do not assign a fixed module set per industry** — a restaurant and
+a jewelry brand can both want TextMaskReveal, or neither might. The content
+decides.
 
-### TextMaskReveal
-Giant outlined text fills with color on scroll via clipPath animation.
-```tsx
-<TextMaskReveal text="BRAND" fillColor="#D72626" />
-```
-- Uses `-webkit-text-stroke` for outline, filled copy behind
-- GSAP ScrollTrigger scrub drives `clipPath: inset()`
+## Page composition — narrative-driven
 
-### KineticMarquee
-Infinite text strip that accelerates with scroll velocity.
-```tsx
-<KineticMarquee
-  items={["ITEM ONE", "ITEM TWO", "日本語"]}
-  baseSpeed={1.5}
-  direction="left"
-/>
-```
-- Uses `ScrollTrigger.getVelocity()` to modulate speed
-- Triple-cloned content for seamless loop
-- requestAnimationFrame-driven
+**Every site tells a different story; figure out the story before picking
+modules.**
 
-### SpotlightBorderCards
-Grid of cards with cursor-tracking border glow.
-```tsx
-<SpotlightBorderCards
-  accentColor="215, 38, 38"
-  items={[
-    { icon: <svg>...</svg>, title: "Feature", description: "..." },
-  ]}
-/>
-```
-- Parent grid tracks mousemove, sets `--mx`/`--my` CSS vars per card
-- `::before` pseudo with `radial-gradient(circle 180px at var(--mx) var(--my), ...)`
-
-### OdometerCounter
-Mechanical rolling digit counter triggered on scroll.
-```tsx
-<OdometerCounter value={2023} label="Award Year" suffix="" />
-```
-- Each digit is a 0-9 vertical strip
-- Staggered 0.12s transition delays per digit
-- ScrollTrigger `once: true`
-
-### AccordionSlider
-Expandable image panels.
-```tsx
-<AccordionSlider panels={[
-  { image: "/photo.jpg", title: "Title", description: "..." },
-]} />
-```
-- `flex: 1` → `flex: 5` on hover/click
-- Background zoom, staggered content reveal (0.1s, 0.15s, 0.2s)
-
-### ColorShiftSection
-Background/text color shifts when section enters viewport.
-```tsx
-<ColorShiftSection bgColor="#0D0A2A" textColor="#FAF5EF">
-  <div>Content here</div>
-</ColorShiftSection>
-```
-- ScrollTrigger at `top 60%`, 0.8s CSS transition
-
-### StickyStack
-Pinned visual + scrolling content cards.
-```tsx
-<StickyStack items={[
-  { visual: <img />, title: "Step 1", description: "..." },
-]} />
-```
-- Left column pinned, visual swaps opacity as right cards scroll
-- Section height = items.length × 100vh
-
-### CurtainReveal
-Two panels part like curtains on scroll.
-```tsx
-<CurtainReveal leftText="よい" rightText="時間を">
-  <div>Revealed CTA content</div>
-</CurtainReveal>
-```
-- 300vh section, scrub animation
-- Panels move `xPercent: ±100`
-
-### HorizontalScroll
-Scroll-hijack horizontal gallery.
-```tsx
-<HorizontalScroll>{panels}</HorizontalScroll>
-```
-- Section height = panels × 100vh
-- Progress bar at bottom
-
-### GradientStrokeText
-Animated gradient outlined text.
-```tsx
-<GradientStrokeText text="RESERVE" colors={["#FAF5EF", "#EED8C3"]} />
-```
-- `background-size: 300%` with infinite linear animation
-
-### CursorGlow
-Page-wide cursor-following radial gradient.
-```tsx
-<CursorGlow color="#D72626" />
-```
-- 500px circle, 0.12 easing factor
-- Desktop only (touch detection)
-
-### NoiseOverlay
-Subtle film grain overlay.
-```tsx
-<NoiseOverlay opacity={0.035} />
-```
-- SVG feTurbulence filter
-- Fixed position, pointer-events none
-
-### TiltCard
-3D perspective tilt with spotlight.
-```tsx
-<TiltCard className="p-8 bg-card rounded-xl">Content</TiltCard>
-```
-- `perspective(600px) rotateY(x*12deg) rotateX(-y*12deg) scale(1.02)`
-
----
-
-## Module Selection — Content-Driven, Not Industry-Templated
-
-**DO NOT assign a fixed module set per industry.** Instead, ask:
-
-| Question | If yes → consider |
-|----------|-------------------|
-| Does the brand name deserve a dramatic reveal? | TextMaskReveal, CurtainReveal |
-| Are there 3+ visual items to showcase? | AccordionSlider, HorizontalScroll |
-| Are there impressive numbers to display? | OdometerCounter |
-| Does the offering need step-by-step explanation? | StickyStack |
-| Are there 4+ services/features to present? | SpotlightBorderCards |
-| Does the brand have cultural identity? | KineticMarquee with native script |
-| Does the page need mood transitions? | ColorShiftSection |
-| Is there a strong conversion moment? | CurtainReveal, MagneticButton |
-| Does the brand benefit from ambient texture? | CursorGlow, NoiseOverlay |
-
-The industry table below is a **starting suggestion**, not a recipe:
-
-| Industry | Modules that often work well |
-|----------|-------------------|
-| Restaurant/Food | ColorShift, AccordionSlider, KineticMarquee |
-| Luxury/Jewelry | TextMaskReveal, CurtainReveal, HorizontalScroll |
-| Tech/SaaS | SpotlightBorderCards, StickyStack, GradientStrokeText |
-| Creative/Agency | AccordionSlider, HorizontalScroll, TextMaskReveal |
-| Service Business | OdometerCounter, StickyStack, SpotlightBorderCards |
-
----
-
-## Page Composition — Narrative-Driven
-
-**Every site tells a different story.** Compose based on the brand's narrative arc, not a fixed template.
-
-### Step 1: Define the arc
-- Restaurant: "Enter our world → taste the menu → feel the vibe → reserve"
-- SaaS: "Understand the pain → see the solution → trust the proof → start free"
-- Portfolio: "See the work → understand the process → hire us"
-- Each arc is unique. Figure out the story FIRST, then pick modules to tell it.
-
-### Step 2: Map modules to story beats
-- **Establish mood** → CanvasHero, ColorShiftSection, CursorGlow
-- **Reveal identity** → TextMaskReveal, GradientStrokeText, CurtainReveal
-- **Build energy** → KineticMarquee, AccordionSlider
-- **Show offerings** → SpotlightBorderCards, StickyStack, HorizontalScroll
-- **Prove credibility** → OdometerCounter, TiltCard
-- **Drive action** → CurtainReveal, MagneticButton
-
-### Step 3: Edit ruthlessly
-A tight 5-section page beats a bloated 9-section page. Use 4-7 sections. Cut anything that doesn't serve the narrative.
-
----
-
-## Performance Notes
-
-- All GSAP is dynamically imported (code-split) — zero initial bundle impact
-- ScrollTrigger instances cleaned up via `gsap.context()` in useEffect return
-- Lenis smooth scroll only for cinematic/luxury/creative presets
-- `will-change: transform` on animated elements only during animation
-- `prefers-reduced-motion` check should disable scroll-driven effects
-- GSAP Master MCP `optimize_for_performance` handles the rest
+1. **Define the arc.** Restaurant: "enter our world → taste the menu → feel
+   the vibe → reserve." SaaS: "understand the pain → see the solution →
+   trust the proof → start free." Portfolio: "see the work → understand the
+   process → hire us." Each arc is specific to the brand — write it down
+   first.
+2. **Map beats to modules** using `references/module-selection.md`'s
+   question table, checked against the archetype's `bannedModules`.
+3. **Edit ruthlessly.** A tight 5-section page beats a bloated 9-section
+   one. Use 4–7 sections; cut anything that doesn't serve the arc. For
+   cinematic-archetype homes specifically, `cinematic.md`'s section recipe
+   is the starting skeleton, not a checklist to fill completely.

@@ -1,7 +1,7 @@
 {
   "name": "haazel",
-  "version": "0.1.0",
-  "description": "End-to-end cinematic website builder plugin. Domain analysis, brand extraction, GSAP cinematic modules, Sanity CMS auto-blogging. Produces production-grade Next.js sites with scroll-driven video heroes, TextMaskReveal, SpotlightBorderCards, KineticMarquee, CurtainReveal, and more.",
+  "version": "0.2.0",
+  "description": "Multi-archetype site factory — cinematic/saas/app/leadgen/commerce/editorial. Tokenized design systems (design/tokens.json + DESIGN_SYSTEM.md/.html), Higgsfield or FAL asset pipelines, model-tiered agent delegation, optional Sanity CMS auto-blogging. Git-first — deployment stays manual.",
   "author": {
     "name": "Haazel",
     "email": "micheauxspencer@gmail.com"
@@ -13,7 +13,13 @@
     "sanity",
     "fal",
     "website-builder",
-    "scaffold"
+    "scaffold",
+    "saas",
+    "dashboard",
+    "leadgen",
+    "commerce",
+    "design-tokens",
+    "higgsfield"
   ],
   "license": "MIT"
 }
